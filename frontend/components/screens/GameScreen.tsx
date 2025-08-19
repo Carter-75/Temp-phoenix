@@ -3,12 +3,11 @@ import {
   View,
   StyleSheet,
   Dimensions,
-  PanGestureHandler,
-  GestureHandlerRootView,
   Text,
   TouchableOpacity,
   Alert,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { GameEngine } from 'react-native-game-engine';
 import { useGameState } from '../contexts/GameStateContext';
 import { Screen } from '../GameContainer';
