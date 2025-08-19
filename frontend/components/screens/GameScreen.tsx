@@ -23,6 +23,29 @@ interface GameScreenProps {
   onNavigate: (screen: Screen) => void;
 }
 
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import {
+  View,
+  StyleSheet,
+  Dimensions,
+  Text,
+  TouchableOpacity,
+  Alert,
+  Animated,
+  PanResponder,
+} from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { useGameState } from '../contexts/GameStateContext';
+import { Screen } from '../GameContainer';
+import Phoenix from '../game/Phoenix';
+import GameUI from '../game/GameUI';
+
+const { width, height } = Dimensions.get('window');
+
+interface GameScreenProps {
+  onNavigate: (screen: Screen) => void;
+}
+
 export default function GameScreen({ onNavigate }: GameScreenProps) {
   const { gameState, gainXP, gainCoins, onPlayerDeath } = useGameState();
   const [gameRunning, setGameRunning] = useState(true);
@@ -32,29 +55,14 @@ export default function GameScreen({ onNavigate }: GameScreenProps) {
   const [score, setScore] = useState(0);
   const [showDeathAd, setShowDeathAd] = useState(false);
   
-  const engineRef = useRef<GameEngine>(null);
-  const gameDataRef = useRef<GameData>({
-    phoenix: {
-      x: width / 2,
-      y: height * 0.8,
-      health: gameState.playerStats.maxHealth,
-      maxHealth: gameState.playerStats.maxHealth,
-    },
-    enemies: [],
-    projectiles: [],
-    particles: [],
-    environmentObjects: [],
-    score: 0,
-    gameTime: 0,
-    worldId: 1,
-    attackCooldowns: {
-      hold: 0,
-      double: 0,
-      triple: 0,
-    },
-    isAttacking: false,
-    lastTouchTime: 0,
-    touchCount: 0,
+  // Phoenix position
+  const [phoenixPos, setPhoenixPos] = useState({ x: width / 2, y: height * 0.8 });
+  
+  // Attack cooldowns
+  const [attackCooldowns, setAttackCooldowns] = useState({
+    hold: 0,
+    double: 0,
+    triple: 0,
   });
 
   // Game timer
@@ -75,7 +83,6 @@ export default function GameScreen({ onNavigate }: GameScreenProps) {
   }, [gameRunning]);
 
   const handleBossSpawn = () => {
-    // Spawn boss logic
     setGameRunning(false);
     Alert.alert('Boss Spawned!', 'Defeat the boss to complete this world!');
   };
@@ -84,7 +91,6 @@ export default function GameScreen({ onNavigate }: GameScreenProps) {
     setGameRunning(false);
     onPlayerDeath();
     
-    // Show ad every other death
     if (gameState.deathCount % 2 === 0) {
       setShowDeathAd(true);
     } else {
@@ -98,42 +104,24 @@ export default function GameScreen({ onNavigate }: GameScreenProps) {
     setGameTime(0);
     setGameRunning(true);
     setShowDeathAd(false);
-    
-    // Reset game data
-    gameDataRef.current = {
-      phoenix: {
-        x: width / 2,
-        y: height * 0.8,
-        health: gameState.playerStats.maxHealth,
-        maxHealth: gameState.playerStats.maxHealth,
-      },
-      enemies: [],
-      projectiles: [],
-      particles: [],
-      environmentObjects: [],
-      score: 0,
-      gameTime: 0,
-      worldId: currentWorld,
-      attackCooldowns: {
-        hold: 0,
-        double: 0,
-        triple: 0,
-      },
-      isAttacking: false,
-      lastTouchTime: 0,
-      touchCount: 0,
-    };
+    setPhoenixPos({ x: width / 2, y: height * 0.8 });
+    setAttackCooldowns({ hold: 0, double: 0, triple: 0 });
   };
 
-  const handlePanGesture = useCallback((event: any) => {
-    if (!gameRunning) return;
-
-    const { x, y } = event.nativeEvent;
-    
-    // Update phoenix position with boundaries
-    gameDataRef.current.phoenix.x = Math.max(50, Math.min(width - 50, x));
-    gameDataRef.current.phoenix.y = Math.max(100, Math.min(height - 100, y));
-  }, [gameRunning]);
+  // Pan responder for phoenix movement
+  const panResponder = PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: () => true,
+    onPanResponderMove: (event) => {
+      if (!gameRunning) return;
+      
+      const { pageX, pageY } = event.nativeEvent;
+      setPhoenixPos({
+        x: Math.max(50, Math.min(width - 50, pageX)),
+        y: Math.max(100, Math.min(height - 100, pageY)),
+      });
+    },
+  });
 
   const handleTouch = useCallback((touchCount: number) => {
     if (!gameRunning) return;
@@ -143,33 +131,32 @@ export default function GameScreen({ onNavigate }: GameScreenProps) {
 
     switch (touchCount) {
       case 1: // Hold attack
-        if (equippedMoves.hold && gameDataRef.current.attackCooldowns.hold <= now) {
-          gameDataRef.current.attackCooldowns.hold = now + equippedMoves.hold.cooldown;
-          gameDataRef.current.isAttacking = true;
-          // Add hold attack logic
+        if (equippedMoves.hold && attackCooldowns.hold <= now) {
+          setAttackCooldowns(prev => ({
+            ...prev,
+            hold: now + equippedMoves.hold!.cooldown,
+          }));
+          // Add attack logic here
         }
         break;
       case 2: // Double click
-        if (equippedMoves.double && gameDataRef.current.attackCooldowns.double <= now) {
-          gameDataRef.current.attackCooldowns.double = now + equippedMoves.double.cooldown;
-          // Add double click attack logic
+        if (equippedMoves.double && attackCooldowns.double <= now) {
+          setAttackCooldowns(prev => ({
+            ...prev,
+            double: now + equippedMoves.double!.cooldown,
+          }));
         }
         break;
       case 3: // Triple click
-        if (equippedMoves.triple && gameDataRef.current.attackCooldowns.triple <= now) {
-          gameDataRef.current.attackCooldowns.triple = now + equippedMoves.triple.cooldown;
-          // Add triple click attack logic
+        if (equippedMoves.triple && attackCooldowns.triple <= now) {
+          setAttackCooldowns(prev => ({
+            ...prev,
+            triple: now + equippedMoves.triple!.cooldown,
+          }));
         }
         break;
     }
-  }, [gameRunning, gameState.equippedMoves]);
-
-  const entities = {
-    phoenix: {
-      position: [gameDataRef.current.phoenix.x, gameDataRef.current.phoenix.y],
-      renderer: Phoenix,
-    },
-  };
+  }, [gameRunning, gameState.equippedMoves, attackCooldowns]);
 
   if (showDeathAd) {
     return (
@@ -188,32 +175,27 @@ export default function GameScreen({ onNavigate }: GameScreenProps) {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <View style={styles.gameArea}>
-        <GameEngine
-          ref={engineRef}
-          style={styles.gameEngine}
-          systems={[createGameSystem(gameDataRef, { gainXP, gainCoins, setHealth, setScore })]}
-          entities={entities}
-          running={gameRunning}
-        >
-          <GameUI
-            health={health}
-            maxHealth={gameState.playerStats.maxHealth}
-            score={score}
-            gameTime={gameTime}
-            worldId={currentWorld}
-            attackCooldowns={gameDataRef.current.attackCooldowns}
-            equippedMoves={gameState.equippedMoves}
-            onBack={() => onNavigate('menu')}
-            onPause={() => setGameRunning(!gameRunning)}
-          />
-          
-          <AttackSystem
-            onTouch={handleTouch}
-            onPanGesture={handlePanGesture}
-            gameRunning={gameRunning}
-          />
-        </GameEngine>
+      <View style={styles.gameArea} {...panResponder.panHandlers}>
+        {/* Background */}
+        <View style={styles.background}>
+          {/* Moving clouds/environment will go here */}
+        </View>
+
+        {/* Phoenix */}
+        <Phoenix position={[phoenixPos.x, phoenixPos.y]} />
+        
+        {/* Game UI */}
+        <GameUI
+          health={health}
+          maxHealth={gameState.playerStats.maxHealth}
+          score={score}
+          gameTime={gameTime}
+          worldId={currentWorld}
+          attackCooldowns={attackCooldowns}
+          equippedMoves={gameState.equippedMoves}
+          onBack={() => onNavigate('menu')}
+          onPause={() => setGameRunning(!gameRunning)}
+        />
       </View>
     </GestureHandlerRootView>
   );
