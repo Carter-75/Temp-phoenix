@@ -41,6 +41,7 @@ const { width, height } = Dimensions.get('window');
 
 interface GameScreenProps {
   onNavigate: (screen: Screen) => void;
+  worldId: number;
 }
 
 export default function GameScreen({ onNavigate }: GameScreenProps) {
