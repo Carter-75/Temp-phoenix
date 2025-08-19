@@ -11,28 +11,6 @@ import {
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useGameState } from '../contexts/GameStateContext';
 import { Screen } from '../GameContainer';
-import Phoenix from '../game/Phoenix';
-import GameUI from '../game/GameUI';
-
-const { width, height } = Dimensions.get('window');
-
-interface GameScreenProps {
-  onNavigate: (screen: Screen) => void;
-}
-
-import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  Dimensions,
-  Text,
-  TouchableOpacity,
-  Alert,
-  PanResponder,
-} from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useGameState } from '../contexts/GameStateContext';
-import { Screen } from '../GameContainer';
 import GameEngine, { GameState } from '../game/GameEngine';
 import GameUI from '../game/GameUI';
 import SoundManager, { useGameSounds } from '../game/SoundManager';
