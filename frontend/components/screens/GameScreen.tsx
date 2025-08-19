@@ -209,8 +209,13 @@ const styles = StyleSheet.create({
   gameArea: {
     flex: 1,
   },
-  gameEngine: {
-    flex: 1,
+  background: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    width,
+    height,
+    backgroundColor: '#000014',
   },
   adContainer: {
     flex: 1,
