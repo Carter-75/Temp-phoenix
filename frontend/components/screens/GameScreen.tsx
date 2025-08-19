@@ -44,7 +44,7 @@ interface GameScreenProps {
   worldId: number;
 }
 
-export default function GameScreen({ onNavigate }: GameScreenProps) {
+export default function GameScreen({ onNavigate, worldId }: GameScreenProps) {
   const { gameState: contextGameState, gainXP, gainCoins, onPlayerDeath, updatePlayerStats } = useGameState();
   const gameSounds = useGameSounds();
   
