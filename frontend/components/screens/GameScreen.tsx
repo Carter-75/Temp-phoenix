@@ -35,13 +35,10 @@ import {
   PanResponder,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { GameEngine } from 'react-native-game-engine';
 import { useGameState } from '../contexts/GameStateContext';
 import { Screen } from '../GameContainer';
 import Phoenix from '../game/Phoenix';
 import GameUI from '../game/GameUI';
-import { GameData, createGameSystem } from '../game/GameSystem';
-import AttackSystem from '../game/AttackSystem';
 
 const { width, height } = Dimensions.get('window');
 
