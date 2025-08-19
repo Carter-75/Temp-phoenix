@@ -74,7 +74,7 @@ export default function MenuScreen({ onNavigate }: MenuScreenProps) {
 
           <TouchableOpacity
             style={[styles.button, styles.secondaryButton]}
-            onPress={() => {}}
+            onPress={() => onNavigate('worldSelect')}
           >
             <Text style={[styles.buttonText, styles.secondaryButtonText]}>
               WORLDS
