@@ -50,7 +50,7 @@ export default function GameScreen({ onNavigate, worldId }: GameScreenProps) {
   
   const [gameRunning, setGameRunning] = useState(true);
   const [gameTime, setGameTime] = useState(0);
-  const [currentWorld] = useState(1);
+  const [currentWorld] = useState(worldId);
   const [showDeathAd, setShowDeathAd] = useState(false);
   
   // Phoenix position
