@@ -425,3 +425,112 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+// Touch Handler Component
+interface TouchHandlerProps {
+  onTouch: (touchCount: number) => void;
+  gameRunning: boolean;
+}
+
+function TouchableHandler({ onTouch, gameRunning }: TouchHandlerProps) {
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const tapCountRef = useRef(0);
+  const tapTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isHoldingRef = useRef(false);
+
+  const handleTouchStart = useCallback((event: any) => {
+    if (!gameRunning) return;
+
+    const { locationX, locationY } = event.nativeEvent;
+    const now = Date.now();
+    
+    touchStartRef.current = { x: locationX, y: locationY, time: now };
+    
+    // Increment tap count
+    tapCountRef.current += 1;
+
+    // Clear existing timers
+    if (tapTimerRef.current) {
+      clearTimeout(tapTimerRef.current);
+    }
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+    }
+
+    // Set hold timer for potential hold attack
+    holdTimerRef.current = setTimeout(() => {
+      if (touchStartRef.current && !isHoldingRef.current) {
+        isHoldingRef.current = true;
+        onTouch(1); // Hold attack
+      }
+    }, 300); // 300ms to trigger hold
+
+    // Set tap detection timer
+    tapTimerRef.current = setTimeout(() => {
+      if (tapCountRef.current > 0 && !isHoldingRef.current) {
+        // Process tap attacks
+        if (tapCountRef.current >= 3) {
+          onTouch(3); // Triple click
+        } else if (tapCountRef.current === 2) {
+          onTouch(2); // Double click
+        }
+      }
+      tapCountRef.current = 0;
+    }, 250); // 250ms window for multiple taps
+
+  }, [gameRunning, onTouch]);
+
+  const handleTouchEnd = useCallback(() => {
+    if (!gameRunning) return;
+
+    // Clear hold timer
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+
+    // Reset hold state
+    isHoldingRef.current = false;
+    touchStartRef.current = null;
+  }, [gameRunning]);
+
+  const handleTouchCancel = useCallback(() => {
+    if (tapTimerRef.current) {
+      clearTimeout(tapTimerRef.current);
+    }
+    if (holdTimerRef.current) {
+      clearTimeout(holdTimerRef.current);
+    }
+    tapCountRef.current = 0;
+    isHoldingRef.current = false;
+    touchStartRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (tapTimerRef.current) {
+        clearTimeout(tapTimerRef.current);
+      }
+      if (holdTimerRef.current) {
+        clearTimeout(holdTimerRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: '100%',
+        zIndex: 10,
+      }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      onTouchCancel={handleTouchCancel}
+    />
+  );
+}
